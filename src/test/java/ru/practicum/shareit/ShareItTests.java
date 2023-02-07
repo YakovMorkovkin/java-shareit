@@ -29,7 +29,7 @@ class ShareItTests {
 
 
     @BeforeEach
-    public void BeforeEach() {
+    public void beforeEach() {
         userRepository = new UserRepositoryImpl();
         itemRepository = new ItemRepositoryImpl(userRepository);
         itemService = new ItemServiceImpl(itemRepository, userRepository);

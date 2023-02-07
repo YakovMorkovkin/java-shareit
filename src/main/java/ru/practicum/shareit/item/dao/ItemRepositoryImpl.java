@@ -16,12 +16,12 @@ import java.util.*;
 @Primary
 public class ItemRepositoryImpl implements ItemRepository {
     private Long id = 0L;
-    private final Map<Long,Item> items = new HashMap<>();
+    private final Map<Long, Item> items = new HashMap<>();
     private final UserRepository userRepository;
 
 
     @Override
-    public Item addItem(Long userId,@Valid Item item) {
+    public Item addItem(Long userId, @Valid Item item) {
         item.setOwner(userRepository.getUserById(userId).orElseThrow(
                 () -> new NotFoundException("User with id -" + userId + " isn't found")));
         Long key = generatorId();
@@ -33,7 +33,7 @@ public class ItemRepositoryImpl implements ItemRepository {
     @Override
     public Item updateItem(Long itemId, Long userId, Item newItem) {
         Item originalItem;
-        if(userId.equals(items.get(itemId).getOwner().getId())) {
+        if (userId.equals(items.get(itemId).getOwner().getId())) {
             originalItem = items.get(itemId);
         } else {
             throw new UserMismatchException("User with id-" + userId + " isn't owner item with id -" + itemId);
@@ -60,7 +60,7 @@ public class ItemRepositoryImpl implements ItemRepository {
     }
 
     private Long generatorId() {
-     return ++id;
+        return ++id;
     }
 
 }
