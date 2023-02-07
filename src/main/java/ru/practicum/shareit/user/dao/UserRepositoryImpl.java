@@ -3,12 +3,10 @@ package ru.practicum.shareit.user.dao;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
-import org.springframework.validation.annotation.Validated;
 import ru.practicum.shareit.exception.EmailDuplicateException;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.user.model.User;
 
-import javax.validation.Valid;
 import java.util.*;
 
 @Repository("UserRepositoryImpl")
@@ -16,12 +14,12 @@ import java.util.*;
 @Primary
 public class UserRepositoryImpl implements UserRepository {
     private Long id = 0L;
-    private final Map<Long,User> users = new HashMap<>();
+    private final Map<Long, User> users = new HashMap<>();
 
     @Override
     public User addUser(User user) {
         Long key;
-        if(!emailIsDuplicated(user.getEmail())) {
+        if (!emailIsDuplicated(user.getEmail())) {
             key = generatorId();
             user.setId(key);
             users.put(key, user);
@@ -35,7 +33,7 @@ public class UserRepositoryImpl implements UserRepository {
     public User updateUser(Long userId, User user) {
         if (emailIsDuplicated(user.getEmail())) {
             throw new EmailDuplicateException("User with email - " + user.getEmail() + " already exists");
-        } else if(users.containsKey(userId)) {
+        } else if (users.containsKey(userId)) {
             User originalUser = users.get(userId);
             user.setId(userId);
             user.setName(user.getName() != null ? user.getName() : originalUser.getName());
@@ -66,7 +64,7 @@ public class UserRepositoryImpl implements UserRepository {
         return ++id;
     }
 
-    private boolean emailIsDuplicated(String email){
+    private boolean emailIsDuplicated(String email) {
         return users.values().stream()
                 .anyMatch(u -> u.getEmail().equals(email));
     }
