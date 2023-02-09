@@ -3,7 +3,7 @@ package ru.practicum.shareit.item.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
-import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.exception.UserFoundException;
 import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.dao.UserRepository;
@@ -20,8 +20,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public List<Item> getAllUserItems(Long userId) {
-        userRepository.getUserById(userId).orElseThrow(
-                () -> new NotFoundException("User with id -" + userId + " not found"));
+        userRepository.getUserById(userId).orElseThrow(() -> new UserFoundException(userId));
         return itemRepository.getAllItems().stream()
                 .filter(i -> i.getOwner().getId().equals(userId))
                 .collect(Collectors.toList());

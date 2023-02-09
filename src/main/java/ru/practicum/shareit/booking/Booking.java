@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 public class Booking {
-    private long id;
+    private Long id;
     @NotEmpty
     private LocalDateTime start;
     @NotEmpty

@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
 import ru.practicum.shareit.exception.EmailDuplicateException;
-import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.exception.UserFoundException;
 import ru.practicum.shareit.user.model.User;
 
 import java.util.*;
@@ -24,7 +24,7 @@ public class UserRepositoryImpl implements UserRepository {
             user.setId(key);
             users.put(key, user);
         } else {
-            throw new EmailDuplicateException("User with email - " + user.getEmail() + " already exists");
+            throw new EmailDuplicateException(user.getEmail());
         }
         return users.get(key);
     }
@@ -32,7 +32,7 @@ public class UserRepositoryImpl implements UserRepository {
     @Override
     public User updateUser(Long userId, User user) {
         if (emailIsDuplicated(user.getEmail())) {
-            throw new EmailDuplicateException("User with email - " + user.getEmail() + " already exists");
+            throw new EmailDuplicateException(user.getEmail());
         } else if (users.containsKey(userId)) {
             User originalUser = users.get(userId);
             user.setId(userId);
@@ -40,7 +40,7 @@ public class UserRepositoryImpl implements UserRepository {
             user.setEmail(user.getEmail() != null ? user.getEmail() : originalUser.getEmail());
             users.put(userId, user);
         } else {
-            throw new NotFoundException("User with id-" + userId + " isn't found");
+            throw new UserFoundException(userId);
         }
         return users.get(userId);
     }

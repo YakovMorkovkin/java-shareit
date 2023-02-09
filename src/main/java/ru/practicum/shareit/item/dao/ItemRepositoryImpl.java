@@ -3,7 +3,7 @@ package ru.practicum.shareit.item.dao;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
-import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.exception.UserFoundException;
 import ru.practicum.shareit.exception.UserMismatchException;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.dao.UserRepository;
@@ -22,8 +22,7 @@ public class ItemRepositoryImpl implements ItemRepository {
 
     @Override
     public Item addItem(Long userId, @Valid Item item) {
-        item.setOwner(userRepository.getUserById(userId).orElseThrow(
-                () -> new NotFoundException("User with id -" + userId + " isn't found")));
+        item.setOwner(userRepository.getUserById(userId).orElseThrow(() -> new UserFoundException(userId)));
         Long key = generatorId();
         item.setId(key);
         items.put(key, item);
@@ -36,7 +35,7 @@ public class ItemRepositoryImpl implements ItemRepository {
         if (userId.equals(items.get(itemId).getOwner().getId())) {
             originalItem = items.get(itemId);
         } else {
-            throw new UserMismatchException("User with id-" + userId + " isn't owner item with id -" + itemId);
+            throw new UserMismatchException(userId, itemId);
         }
         items.put(itemId, Item.builder()
                 .id(originalItem.getId())

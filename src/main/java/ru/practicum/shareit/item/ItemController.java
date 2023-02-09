@@ -2,7 +2,7 @@ package ru.practicum.shareit.item;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.exception.ItemFoundException;
 import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemMapper;
@@ -37,7 +37,7 @@ public class ItemController {
     @GetMapping("/{itemId}")
     public ItemDto getItemById(@PathVariable Long itemId) {
         return itemMapper.toItemDto(itemRepository.getItemById(itemId).orElseThrow(
-                () -> new NotFoundException("Item with id -" + itemId + " not found")
+                () -> new ItemFoundException(itemId)
         ));
     }
 
