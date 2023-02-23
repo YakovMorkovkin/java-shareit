@@ -2,24 +2,25 @@ package ru.practicum.shareit.item.dto;
 
 import lombok.Builder;
 import lombok.Data;
-import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.booking.dto.BookingShortDto;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
-import java.io.Serializable;
+import java.util.List;
 
 @Data
 @Builder
-public class ItemDto implements Serializable {
-    private final Long id;
-    private final User owner;
+public class ItemDto {
+    private Long id;
     @NotNull
     @NotBlank
-    private final String name;
+    private String name;
     @NotNull
     @NotBlank
-    private final String description;
+    private String description;
     @NotNull
-    private final Boolean available;
-    private final Long request;
+    private Boolean available;
+    private List<CommentDto> comments;
+    private BookingShortDto lastBooking;
+    private BookingShortDto nextBooking;
 }
