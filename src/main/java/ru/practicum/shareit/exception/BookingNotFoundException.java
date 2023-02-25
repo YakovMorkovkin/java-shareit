@@ -1,7 +1,7 @@
 package ru.practicum.shareit.exception;
 
-public class BookingFoundException extends NotFoundException {
-    public BookingFoundException(Long bookingId) {
+public class BookingNotFoundException extends NotFoundException {
+    public BookingNotFoundException(Long bookingId) {
         super(String.format("Booking with id - %d not found", bookingId));
     }
 }
