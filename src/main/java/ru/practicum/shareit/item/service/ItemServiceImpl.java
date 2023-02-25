@@ -3,7 +3,6 @@ package ru.practicum.shareit.item.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
-import ru.practicum.shareit.booking.Status;
 import ru.practicum.shareit.booking.dao.BookingRepository;
 import ru.practicum.shareit.booking.dto.BookingShortDto;
 import ru.practicum.shareit.booking.dto.mapper.BookingShortMapper;
@@ -26,6 +25,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static ru.practicum.shareit.booking.Status.REJECTED;
 
 @Service
 @RequiredArgsConstructor
@@ -76,7 +77,7 @@ public class ItemServiceImpl implements ItemService {
         LocalDateTime now = LocalDateTime.now();
         List<Booking> bookings = bookingRepository.findAllByItem_IdAndBooker_Id(itemId, userId);
         if (!bookings.isEmpty() && bookings.stream()
-                .anyMatch(x -> !x.getStatus().equals(Status.REJECTED) && x.getStart().isBefore(now))) {
+                .anyMatch(x -> !x.getStatus().equals(REJECTED) && x.getStart().isBefore(now))) {
             comment = Comment.builder()
                     .text(commentDto.getText())
                     .author(bookings.get(0).getBooker())
@@ -128,20 +129,16 @@ public class ItemServiceImpl implements ItemService {
         lastAndNextBokings.add(1, null);
         LocalDateTime now = LocalDateTime.now();
         List<Booking> itemBookings = bookingRepository.findAllByItem_Id(itemDto.getId());
-        if (!itemBookings.isEmpty()) {
-            itemBookings.sort(Comparator.comparing(Booking::getId));
-            for (int i = 1; i < (itemBookings.size()); i++) {
-                if (itemBookings.get(i).getStart().isAfter(now) && i >= 1) {
-                    lastAndNextBokings.add(1, bookingShortMapper.toDTO(itemBookings.get(i)));
-                    lastAndNextBokings.add(0, bookingShortMapper.toDTO(itemBookings.get(i - 1)));
-                    if (itemBookings.get(i).getStart().isAfter(now)) {
-                        lastAndNextBokings.add(1, bookingShortMapper.toDTO(itemBookings.get(i)));
-                    } else if (itemBookings.get(i).getStart().isBefore(now)) {
-                        lastAndNextBokings.add(0, bookingShortMapper.toDTO(itemBookings.get(i)));
-                    }
-                }
-            }
-        }
+        lastAndNextBokings.add(0, bookingShortMapper.toDTO(itemBookings.stream()
+                .filter(x -> !x.getStatus().equals(REJECTED))
+                .filter(x -> x.getEnd().isBefore(now))
+                .sorted(Comparator.comparing(Booking::getStart))
+                .findFirst().orElse(null)));
+        lastAndNextBokings.add(1, bookingShortMapper.toDTO(itemBookings.stream()
+                .filter(x -> !x.getStatus().equals(REJECTED))
+                .filter(x -> x.getStart().isAfter(now))
+                .sorted(Comparator.comparing(Booking::getStart))
+                .findFirst().orElse(null)));
         return lastAndNextBokings;
     }
 
