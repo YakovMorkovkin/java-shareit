@@ -58,5 +58,5 @@ CREATE TABLE IF NOT EXISTS bookings
     CONSTRAINT pk_bookings PRIMARY KEY (id),
     CONSTRAINT fk_bookings_item_id FOREIGN KEY (item_id) REFERENCES items (id)   ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_booker_id FOREIGN KEY (booker_id) REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE,
-    UNIQUE (start_date, end_date, item_id, booker_id)
+    CONSTRAINT uq_bookings UNIQUE (start_date, end_date, item_id, booker_id)
 );
