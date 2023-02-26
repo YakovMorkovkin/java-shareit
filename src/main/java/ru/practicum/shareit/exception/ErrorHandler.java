@@ -40,16 +40,7 @@ public class ErrorHandler {
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleItemUnavailable(final ItemUnavailableException e) {
-        log.warn("400 {}", e.getMessage(), e);
-        return new ErrorResponse(
-                e.getMessage()
-        );
-    }
-
-    @ExceptionHandler
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleUnsupportedStatusException(final UnsupportedStatusException e) {
+    public ErrorResponse handleUnavailableException(final UnavailableException e) {
         log.warn("400 {}", e.getMessage(), e);
         return new ErrorResponse(
                 e.getMessage()

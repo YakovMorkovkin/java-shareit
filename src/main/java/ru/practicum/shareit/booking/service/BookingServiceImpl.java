@@ -2,9 +2,7 @@ package ru.practicum.shareit.booking.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.shareit.booking.Status;
 import ru.practicum.shareit.booking.dao.BookingRepository;
 import ru.practicum.shareit.booking.dto.BookingDto;
@@ -55,7 +53,7 @@ class BookingServiceImpl implements BookingService {
         userService.getUser(userId);
         List<Item> userItems = itemRepository.findByOwnerId(userId);
         if (userItems.isEmpty()) {
-            throw new NotFoundException("User isn't owner any item");
+            throw new UserHaveNotAnyItemException();
         }
         List<Booking> allBookings = bookingRepository.findAllByBooker_IdNotAndItemIn(userId, userItems);
         return getUserBookings(state, allBookings);
@@ -64,7 +62,7 @@ class BookingServiceImpl implements BookingService {
     @Override
     public BookingDto addBooking(Long userId, BookingDtoIn bookingDtoIn) {
         if (bookingDtoIn.getEnd().isBefore(bookingDtoIn.getStart())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Start date of booking after end date");
+            throw new EndBeforeStartException();
         }
         User booker = userService.getUser(userId);
         Item item = itemService.getItem(bookingDtoIn.getItemId());
@@ -84,8 +82,7 @@ class BookingServiceImpl implements BookingService {
         Booking booking = getBooking(bookingId);
         Long itemId = booking.getItem().getId();
         if (booking.getItem().getOwner().getId().equals(userId) && booking.getStatus().equals(Status.APPROVED)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Booking with id-" + booking.getId()
-                    + " is already approved");
+            throw new DoubleApprovingException(booking.getId());
         } else if (booking.getItem().getOwner().getId().equals(userId) && approved) {
             booking.setStatus(Status.APPROVED);
             bookingRepository.update(booking.getStatus(), bookingId);
