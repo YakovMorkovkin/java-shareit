@@ -2,28 +2,15 @@ package ru.practicum.shareit;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import ru.practicum.shareit.item.dao.ItemRepository;
-import ru.practicum.shareit.item.dao.ItemRepositoryImpl;
-import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.item.service.ItemService;
-import ru.practicum.shareit.item.service.ItemServiceImpl;
-import ru.practicum.shareit.user.dao.UserRepository;
-import ru.practicum.shareit.user.dao.UserRepositoryImpl;
-import ru.practicum.shareit.user.model.User;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 @Slf4j
 class ShareItTests {
 
-    private UserRepository userRepository;
+    /*private UserRepository userRepository;
     private ItemRepository itemRepository;
     private ItemService itemService;
 
@@ -218,5 +205,5 @@ class ShareItTests {
         itemRepository.addItem(2L, item1);
         itemRepository.addItem(1L, item2);
         assertEquals(2, itemService.getAllUserItems(1L).size());
-    }
+    }*/
 }

@@ -1,7 +1,7 @@
 package ru.practicum.shareit.exception;
 
-public class ItemFoundException extends NotFoundException {
-    public ItemFoundException(Long itemId) {
+public class ItemNotFoundException extends NotFoundException {
+    public ItemNotFoundException(Long itemId) {
         super(String.format("Item with id - %d not found", itemId));
     }
 }
