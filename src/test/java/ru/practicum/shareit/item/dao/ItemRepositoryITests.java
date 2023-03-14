@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @DataJpaTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class ItemRepositoryIT {
+class ItemRepositoryITests {
     @Autowired
     private UserRepository userRepository;
     @Autowired

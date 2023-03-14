@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @DataJpaTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class BookingRepositoryIT {
+class BookingRepositoryITests {
     @Autowired
     private BookingRepository bookingRepository;
     @Autowired

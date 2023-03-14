@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DataJpaTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class UserRepositoryIT {
+class UserRepositoryITests {
     @Autowired
     private UserRepository userRepository;
 

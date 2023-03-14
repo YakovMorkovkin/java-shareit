@@ -21,7 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static ru.practicum.shareit.Constants.ID;
 
 @WebMvcTest(ItemController.class)
-class ItemControllerIT {
+class ItemControllerITests {
     @Autowired
     private ObjectMapper objectMapper;
     @Autowired
