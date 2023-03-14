@@ -57,6 +57,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     @Transactional
     @Modifying
-    @Query(value = "DELETE FROM Booking ")
+    @Query(value = "DELETE FROM Booking")
     void deleteAll();
 }

@@ -1,10 +1,12 @@
 package ru.practicum.shareit.item.dao;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.test.annotation.DirtiesContext;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.request.dao.ItemRequestRepository;
 import ru.practicum.shareit.request.model.ItemRequest;
@@ -17,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @DataJpaTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class ItemRepositoryITests {
     @Autowired
     private UserRepository userRepository;
@@ -30,6 +33,7 @@ class ItemRepositoryITests {
             .name("Item owner")
             .email("item_owner@test.ru")
             .build();
+
     User requestor = User.builder()
             .id(2L)
             .name("Item requestor")
@@ -96,5 +100,12 @@ class ItemRepositoryITests {
 
     @Test
     void findAllByItemRequestId() {
+    }
+
+    @AfterAll
+    public void deleteItems() {
+        itemRepository.deleteAll();
+        itemRequestRepository.deleteAll();
+        userRepository.deleteAll();
     }
 }
