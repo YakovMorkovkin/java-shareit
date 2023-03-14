@@ -12,6 +12,4 @@ public interface UserService {
     UserDto updateUser(Long userId, UserDto userDto);
 
     User getUser(Long userId);
-
-    User composeUser(User user, UserDto userDto);
 }

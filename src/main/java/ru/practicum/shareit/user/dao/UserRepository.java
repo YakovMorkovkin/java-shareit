@@ -17,4 +17,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     void update(String name, String email, Long userId);
 
     Optional<User> findByEmail(String email);
+
+    @Transactional
+    @Modifying
+    @Query(value = "DELETE FROM User ")
+    void deleteAll();
 }

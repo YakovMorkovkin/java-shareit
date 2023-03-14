@@ -2,19 +2,15 @@ package ru.practicum.shareit.item;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.dto.mapper.ItemMapper;
-import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.service.ItemService;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static ru.practicum.shareit.Constants.ID;
 
@@ -22,9 +18,7 @@ import static ru.practicum.shareit.Constants.ID;
 @RequestMapping("/items")
 @RequiredArgsConstructor
 public class ItemController {
-    private final ItemRepository itemRepository;
     private final ItemService itemService;
-    private final ItemMapper itemMapper;
 
     @PostMapping
     public ItemDto addItem(@NotEmpty @RequestHeader(ID) Long userId,
@@ -46,24 +40,21 @@ public class ItemController {
     }
 
     @GetMapping
-    public List<ItemDto> getAllItemsOfUserWithId(@NotEmpty @RequestHeader(ID) Long userId) {
-        return itemRepository.findByOwnerId(userId).stream()
-                .map(itemMapper::toDTO)
-                .map(itemService::connectBooking)
-                .map(itemService::connectComment)
-                .sorted(Comparator.comparing(ItemDto::getId))
-                .collect(Collectors.toList());
+    public List<ItemDto> getAllItemsOfUserWithId(@NotEmpty @RequestHeader(ID) Long userId,
+                                                 @RequestParam(value = "from", defaultValue = "0",
+                                                         required = false) @Min(0) Integer offset,
+                                                 @RequestParam(value = "size", defaultValue = "10",
+                                                         required = false) @Min(1) @Max(50) Integer limit) {
+        return itemService.getAllItemsOfUserWithId(userId, offset, limit);
     }
 
     @GetMapping("/search")
-    public List<ItemDto> searchItem(@RequestParam String text) {
-        if (text != null && !text.isEmpty()) {
-            return itemRepository.findByDescriptionContainsIgnoreCaseOrNameContainsIgnoreCase(text, text)
-                    .stream()
-                    .filter(Item::getAvailable)
-                    .map(itemMapper::toDTO)
-                    .collect(Collectors.toList());
-        } else return new ArrayList<>();
+    public List<ItemDto> searchItem(@RequestParam String text,
+                                    @RequestParam(value = "from", defaultValue = "0",
+                                            required = false) @Min(0) Integer offset,
+                                    @RequestParam(value = "size", defaultValue = "10",
+                                            required = false) @Min(1) @Max(50) Integer limit) {
+        return itemService.searchItem(text, offset, limit);
     }
 
     @PostMapping("/{itemId}/comment")

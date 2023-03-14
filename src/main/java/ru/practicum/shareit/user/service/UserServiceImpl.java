@@ -42,8 +42,7 @@ public class UserServiceImpl implements UserService {
         return userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
     }
 
-    @Override
-    public User composeUser(User user, UserDto userDto) {
+    private User composeUser(User user, UserDto userDto) {
         return User.builder()
                 .id(user.getId())
                 .name(userDto.getName() != null ? userDto.getName() : user.getName())
