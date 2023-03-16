@@ -8,6 +8,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
+import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.item.dto.ItemShortDto;
 import ru.practicum.shareit.item.dto.mapper.ItemShortMapper;
@@ -21,8 +22,10 @@ import ru.practicum.shareit.user.service.UserService;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -122,5 +125,14 @@ class ItemRequestServiceImplUnitTests {
         when(itemRequestRepository.findAllByRequestorIdNot(any(), any())).thenReturn(Page.empty());
 
         assertEquals(0, itemRequestService.getAllItemRequestsOfUsers(userId, offset, limit).size());
+    }
+
+    @Test
+    void getItemRequestById_whenItemRequestNotExists_thenItemNotFoundExceptionThrown() {
+        Long userId = 1L;
+        Long itemRequestId = 1L;
+        when(userService.getUser(any())).thenReturn(testUser);
+        when(itemRequestRepository.findById(any())).thenReturn(Optional.empty());
+        assertThrows(NotFoundException.class, () -> itemRequestService.getItemRequestById(userId, itemRequestId));
     }
 }
