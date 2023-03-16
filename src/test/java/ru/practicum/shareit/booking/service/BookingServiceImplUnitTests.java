@@ -101,7 +101,7 @@ class BookingServiceImplUnitTests {
         Long userId = 2L;
 
         when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(expectedBooking));
-        when(bookingMapper.toDTO(expectedBooking)).thenReturn(expectedBookingDto);
+        when(bookingMapper.toDTO(any())).thenReturn(expectedBookingDto);
 
         BookingDto actualBooking = bookingService.getBookingById(bookingId, userId);
 

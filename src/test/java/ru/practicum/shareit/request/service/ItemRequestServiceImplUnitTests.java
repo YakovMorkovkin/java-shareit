@@ -10,10 +10,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.item.dto.ItemShortDto;
 import ru.practicum.shareit.item.dto.mapper.ItemShortMapper;
+import ru.practicum.shareit.item.dto.mapper.ItemShortMapperImpl;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.request.dao.ItemRequestRepository;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
 import ru.practicum.shareit.request.dto.mapper.ItemRequestMapper;
+import ru.practicum.shareit.request.dto.mapper.ItemRequestMapperImpl;
 import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
@@ -49,13 +51,13 @@ class ItemRequestServiceImplUnitTests {
     @Mock
     private ItemRequestRepository itemRequestRepository;
     @Mock
-    private ItemRequestMapper itemRequestMapper;
+    private ItemRequestMapper itemRequestMapper = new ItemRequestMapperImpl();
     @Mock
     private UserService userService;
     @Mock
     private ItemRepository itemRepository;
     @Mock
-    private ItemShortMapper itemShortMapper;
+    private ItemShortMapper itemShortMapper = new ItemShortMapperImpl();
     @Captor
     private ArgumentCaptor<ItemRequest> itemRequestArgumentCaptor;
     @InjectMocks
