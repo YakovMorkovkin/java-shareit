@@ -45,7 +45,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         return request;
     }
 
-    private List<ItemShortDto> getRequestItems(ItemRequestDto request) {
+    public List<ItemShortDto> getRequestItems(ItemRequestDto request) {
         return itemRepository.findAllByItemRequestId(request.getId()).stream()
                 .map(itemShortMapper::toDTO)
                 .collect(Collectors.toList());

@@ -7,15 +7,14 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
 import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.item.dto.ItemShortDto;
 import ru.practicum.shareit.item.dto.mapper.ItemShortMapper;
-import ru.practicum.shareit.item.dto.mapper.ItemShortMapperImpl;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.request.dao.ItemRequestRepository;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
 import ru.practicum.shareit.request.dto.mapper.ItemRequestMapper;
-import ru.practicum.shareit.request.dto.mapper.ItemRequestMapperImpl;
 import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
@@ -51,13 +50,13 @@ class ItemRequestServiceImplUnitTests {
     @Mock
     private ItemRequestRepository itemRequestRepository;
     @Mock
-    private ItemRequestMapper itemRequestMapper = new ItemRequestMapperImpl();
+    private ItemRequestMapper itemRequestMapper;
     @Mock
     private UserService userService;
     @Mock
     private ItemRepository itemRepository;
     @Mock
-    private ItemShortMapper itemShortMapper = new ItemShortMapperImpl();
+    private ItemShortMapper itemShortMapper;
     @Captor
     private ArgumentCaptor<ItemRequest> itemRequestArgumentCaptor;
     @InjectMocks
@@ -104,5 +103,24 @@ class ItemRequestServiceImplUnitTests {
         ItemRequestDto result = itemRequestService.connectItems(itemRequestDto);
 
         assertEquals(1, result.getItems().size());
+    }
+
+    @Test
+    void getAllOwnItemRequests_whenDataCorrect_thenReturnList() {
+        Long userId = 0L;
+        when(userService.getUser(any())).thenReturn(testUser);
+        when(itemRequestRepository.findAllByRequestorId(any())).thenReturn(new ArrayList<>());
+
+        assertEquals(0, itemRequestService.getAllOwnItemRequests(userId).size());
+    }
+
+    @Test
+    void getAllItemRequestsOfUsers_whenDataCorrect_thenReturnList() {
+        Long userId = 0L;
+        Integer offset = 0;
+        Integer limit = 10;
+        when(itemRequestRepository.findAllByRequestorIdNot(any(), any())).thenReturn(Page.empty());
+
+        assertEquals(0, itemRequestService.getAllItemRequestsOfUsers(userId, offset, limit).size());
     }
 }
