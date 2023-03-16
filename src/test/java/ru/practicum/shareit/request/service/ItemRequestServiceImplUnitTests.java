@@ -128,6 +128,22 @@ class ItemRequestServiceImplUnitTests {
     }
 
     @Test
+    void getItemRequestById_whenItemRequestNotNull_thenReturnList() {
+        Long userId = 1L;
+        Long itemRequestId = 1L;
+        ItemRequest itemRequest = ItemRequest.builder()
+                .description("Description")
+                .build();
+        ItemRequestDto itemRequestDto = ItemRequestDto.builder()
+                .description("Description")
+                .build();
+        when(userService.getUser(any())).thenReturn(testUser);
+        when(itemRequestRepository.findById(any())).thenReturn(Optional.of(itemRequest));
+        when(itemRequestMapper.toDTO(any())).thenReturn(itemRequestDto);
+        assertEquals(itemRequestDto.getDescription(), itemRequestService.getItemRequestById(userId, itemRequestId).getDescription());
+    }
+
+    @Test
     void getItemRequestById_whenItemRequestNotExists_thenItemNotFoundExceptionThrown() {
         Long userId = 1L;
         Long itemRequestId = 1L;

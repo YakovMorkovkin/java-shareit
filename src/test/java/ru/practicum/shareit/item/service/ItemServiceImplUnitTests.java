@@ -10,6 +10,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import ru.practicum.shareit.booking.Status;
 import ru.practicum.shareit.booking.dao.BookingRepository;
+import ru.practicum.shareit.booking.dto.BookingShortDto;
+import ru.practicum.shareit.booking.dto.mapper.BookingShortMapper;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.exception.ItemNotFoundException;
 import ru.practicum.shareit.exception.UnsupportedStatusException;
@@ -74,6 +76,8 @@ class ItemServiceImplUnitTests {
 
     @Mock
     private BookingRepository bookingRepository;
+    @Mock
+    private BookingShortMapper bookingShortMapper;
     @Mock
     private ItemRequestRepository itemRequestRepository;
     @Mock
@@ -154,6 +158,44 @@ class ItemServiceImplUnitTests {
         when(itemRepository.findById(any())).thenReturn(Optional.of(testItem));
 
         assertThrows(UserMismatchException.class, () -> itemService.updateItem(itemId, userId, updateItemDto));
+    }
+
+    @Test
+    void getItemById_whenItemFoundAndOwner_thenReturnBooking() {
+        Long userId = 1L;
+        Long itemId = 1L;
+        BookingShortDto bookingShortDto = BookingShortDto.builder()
+                .id(1L)
+                .bookerId(1L)
+                .build();
+        List<Booking> bookings = new ArrayList<>();
+        bookings.add(Booking.builder()
+                .id(1L)
+                .status(Status.WAITING)
+                .start(LocalDateTime.now().minusDays(2))
+                .end(LocalDateTime.now().minusDays(1))
+                .build());
+        bookings.add(Booking.builder()
+                .id(2L)
+                .status(Status.WAITING)
+                .start(LocalDateTime.now().plusDays(1))
+                .end(LocalDateTime.now().plusDays(2))
+                .build());
+
+        when(bookingRepository.findAllByItemId(itemId)).thenReturn(bookings);
+        when(bookingShortMapper.toDTO(any())).thenReturn(bookingShortDto);
+        when(itemRepository.findById(any())).thenReturn(Optional.of(testItem));
+        when(itemMapper.toDTO(any())).thenReturn(testItemDto);
+        when(commentRepository.findAllByItem_Id(any())).thenReturn(new ArrayList<>());
+
+        when(itemRepository.findById(itemId)).thenReturn(Optional.of(testItem));
+
+
+        ItemDto actualItemDto = itemService.getItemById(userId, itemId);
+
+        assertNotNull(actualItemDto.getNextBooking());
+        assertNotNull(actualItemDto.getLastBooking());
+        assertNotNull(actualItemDto.getComments());
     }
 
     @Test
@@ -271,4 +313,34 @@ class ItemServiceImplUnitTests {
 
         assertThrows(UnsupportedStatusException.class, () -> itemService.addComment(itemId, userId, commentDto));
     }
+
+    @Test
+    void connectBooking_whenDataCorrect_thenReturnLastAndNext() {
+        Long itemId = 1L;
+        BookingShortDto bookingShortDto = BookingShortDto.builder()
+                .id(1L)
+                .bookerId(1L)
+                .build();
+        List<Booking> bookings = new ArrayList<>();
+        bookings.add(Booking.builder()
+                .id(1L)
+                .status(Status.WAITING)
+                .start(LocalDateTime.now().minusDays(2))
+                .end(LocalDateTime.now().minusDays(1))
+                .build());
+        bookings.add(Booking.builder()
+                .id(2L)
+                .status(Status.WAITING)
+                .start(LocalDateTime.now().plusDays(1))
+                .end(LocalDateTime.now().plusDays(2))
+                .build());
+
+        when(bookingRepository.findAllByItemId(itemId)).thenReturn(bookings);
+        when(bookingShortMapper.toDTO(any())).thenReturn(bookingShortDto);
+
+        assertNotNull(itemService.connectBooking(testItemDto).getLastBooking());
+        assertNotNull(itemService.connectBooking(testItemDto).getNextBooking());
+    }
+
+
 }
