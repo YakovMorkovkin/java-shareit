@@ -1,6 +1,7 @@
 package ru.practicum.shareit.booking.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -24,6 +25,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Primary
+@Slf4j
 class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
     private final BookingMapper bookingMapper;
@@ -33,6 +35,7 @@ class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingDto getBookingById(Long bookingId, Long userId) {
+        log.info("Getting booking with id-{} dy user with id-{}", bookingId, userId);
         Booking booking = getBooking(bookingId);
         if (booking.getBooker().getId().equals(userId) || booking.getItem().getOwner().getId().equals(userId)) {
             return bookingMapper.toDTO(booking);
@@ -44,6 +47,7 @@ class BookingServiceImpl implements BookingService {
     @Override
     public List<BookingDto> getAllBookingsOfUser(String state, Long userId, Integer offset, Integer limit) {
         userService.getUser(userId);
+        log.info("Get all bookings of user with id-{} with state-{}", userId, state);
         return getUserBookings(state, userId, offset, limit);
     }
 
@@ -54,6 +58,7 @@ class BookingServiceImpl implements BookingService {
         if (userItems.isEmpty()) {
             throw new UserHaveNotAnyItemException();
         }
+        log.info("Get all items bookings of owner with id-{} with state-{}", userId, state);
         return getBookingsForOwner(state, userItems, userId, offset, limit);
     }
 
@@ -62,7 +67,7 @@ class BookingServiceImpl implements BookingService {
         if (bookingDtoIn.getEnd().isBefore(bookingDtoIn.getStart()) ||
                 bookingDtoIn.getEnd().equals(bookingDtoIn.getStart()) ||
                 bookingDtoIn.getStart() == null) {
-            throw new StartEndMismatchException();
+            throw new StartEndMismatchException(bookingDtoIn.getStart());
         }
         User booker = userService.getUser(userId);
         Item item = itemService.getItem(bookingDtoIn.getItemId());
@@ -71,6 +76,7 @@ class BookingServiceImpl implements BookingService {
         }
         Booking booking = newBooking(bookingDtoIn, booker, item);
         if (item.getAvailable()) {
+            log.info("Add booking by user with id-{}", userId);
             return bookingMapper.toDTO(bookingRepository.save(booking));
         } else {
             throw new ItemUnavailableException(item.getId());
@@ -92,6 +98,7 @@ class BookingServiceImpl implements BookingService {
         } else {
             throw new BookingUnavailableException("User with id -" + userId + " isn't owner of item with id - " + itemId);
         }
+        log.info("Booking with id-{} now has state state-{}", userId, booking.getStatus());
         return bookingMapper.toDTO(booking);
     }
 

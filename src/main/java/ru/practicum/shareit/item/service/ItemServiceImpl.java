@@ -1,6 +1,7 @@
 package ru.practicum.shareit.item.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -34,6 +35,7 @@ import static ru.practicum.shareit.booking.Status.REJECTED;
 @Service
 @RequiredArgsConstructor
 @Primary
+@Slf4j
 public class ItemServiceImpl implements ItemService {
     private final ItemRepository itemRepository;
     private final ItemMapper itemMapper;
@@ -52,6 +54,7 @@ public class ItemServiceImpl implements ItemService {
         if (itemDto.getRequestId() != null) {
             newItem.setItemRequest(itemRequestRepository.findById(itemDto.getRequestId()).orElse(null));
         }
+        log.info("Add item dy user with id-{}", userId);
         return itemMapper.toDTO(itemRepository.save(newItem));
     }
 
@@ -61,6 +64,7 @@ public class ItemServiceImpl implements ItemService {
         Item updateItem;
         if (itemToUpdate.getOwner().getId().equals(userId)) {
             updateItem = composeItem(itemToUpdate, itemDto);
+            log.info("Item with id-{} updated", itemId);
             itemRepository.update(updateItem.getOwner(), updateItem.getName(), updateItem.getDescription(),
                     updateItem.getAvailable(), updateItem.getId());
         } else {
@@ -75,11 +79,13 @@ public class ItemServiceImpl implements ItemService {
         if (item.getOwner().getId().equals(userId)) {
             return connectComment(connectBooking(itemMapper.toDTO(item)));
         }
+        log.info("Get item with id-{}", itemId);
         return connectComment(itemMapper.toDTO(item));
     }
 
     @Override
     public List<ItemDto> getAllItemsOfUserWithId(Long userId, Integer offset, Integer limit) {
+        log.info("Get all items of user with id-{}", userId);
         return itemRepository.findByOwnerId(userId, PageRequest.of(offset, limit, Sort.by("id").ascending()))
                 .map(itemMapper::toDTO)
                 .map(this::connectBooking)

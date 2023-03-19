@@ -1,6 +1,7 @@
 package ru.practicum.shareit.request.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Primary
+@Slf4j
 public class ItemRequestServiceImpl implements ItemRequestService {
 
     private final ItemRequestRepository itemRequestRepository;
@@ -36,6 +38,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         ItemRequest newItemRequest = itemRequestMapper.toModel(itemRequestDto);
         newItemRequest.setRequestor(userService.getUser(userId));
         newItemRequest.setCreated(LocalDateTime.now());
+        log.info("ItemRequest for user with id-{} added", userId);
         return itemRequestMapper.toDTO(itemRequestRepository.save(newItemRequest));
     }
 
@@ -46,6 +49,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     }
 
     public List<ItemShortDto> getRequestItems(ItemRequestDto request) {
+        log.info("Getting all items for request with id-{}", request.getId());
         return itemRepository.findAllByItemRequestId(request.getId()).stream()
                 .map(itemShortMapper::toDTO)
                 .collect(Collectors.toList());
@@ -54,6 +58,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     @Override
     public List<ItemRequestDto> getAllOwnItemRequests(Long userId) {
         userService.getUser(userId);
+        log.info("Getting all Items of owner with id-{}", userId);
         return itemRequestRepository.findAllByRequestorId(userId).stream()
                 .map(itemRequestMapper::toDTO)
                 .map(this::connectItems)
@@ -63,6 +68,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
 
     @Override
     public List<ItemRequestDto> getAllItemRequestsOfUsers(Long userId, Integer offset, Integer limit) {
+        log.info("Getting all Items of user with id-{}", userId);
         return itemRequestRepository.findAllByRequestorIdNot(userId,
                         PageRequest.of(offset, limit, Sort.by("created").ascending()))
                 .map(itemRequestMapper::toDTO).map(this::connectItems).getContent();
@@ -71,7 +77,8 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     @Override
     public ItemRequestDto getItemRequestById(Long userId, Long requestId) {
         userService.getUser(userId);
+        log.info("Getting user with id-{}", userId);
         return this.connectItems(itemRequestMapper.toDTO(itemRequestRepository.findById(requestId).orElseThrow(
-                () -> new NotFoundException("Itemrequest with id - " + requestId + " not found"))));
+                () -> new NotFoundException("ItemRequest with id - " + requestId + " not found"))));
     }
 }
