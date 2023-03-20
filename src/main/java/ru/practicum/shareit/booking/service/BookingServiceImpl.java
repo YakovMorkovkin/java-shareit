@@ -1,7 +1,10 @@
 package ru.practicum.shareit.booking.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.Status;
 import ru.practicum.shareit.booking.dao.BookingRepository;
@@ -17,13 +20,12 @@ import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
 
 import java.time.LocalDateTime;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Primary
+@Slf4j
 class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
     private final BookingMapper bookingMapper;
@@ -33,6 +35,7 @@ class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingDto getBookingById(Long bookingId, Long userId) {
+        log.info("Getting booking with id-{} dy user with id-{}", bookingId, userId);
         Booking booking = getBooking(bookingId);
         if (booking.getBooker().getId().equals(userId) || booking.getItem().getOwner().getId().equals(userId)) {
             return bookingMapper.toDTO(booking);
@@ -42,27 +45,29 @@ class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingDto> getAllBookingsOfUser(Long userId, String state) {
+    public List<BookingDto> getAllBookingsOfUser(String state, Long userId, Integer offset, Integer limit) {
         userService.getUser(userId);
-        List<Booking> allUserBookings = bookingRepository.findAllByBooker_Id(userId);
-        return getUserBookings(state, allUserBookings);
+        log.info("Get all bookings of user with id-{} with state-{}", userId, state);
+        return getUserBookings(state, userId, offset, limit);
     }
 
     @Override
-    public List<BookingDto> getAllItemsBookingsOfOwner(Long userId, String state) {
+    public List<BookingDto> getAllItemsBookingsOfOwner(Long userId, String state, Integer offset, Integer limit) {
         userService.getUser(userId);
         List<Item> userItems = itemRepository.findByOwnerId(userId);
         if (userItems.isEmpty()) {
             throw new UserHaveNotAnyItemException();
         }
-        List<Booking> allBookings = bookingRepository.findAllByBooker_IdNotAndItemIn(userId, userItems);
-        return getUserBookings(state, allBookings);
+        log.info("Get all items bookings of owner with id-{} with state-{}", userId, state);
+        return getBookingsForOwner(state, userItems, userId, offset, limit);
     }
 
     @Override
     public BookingDto addBooking(Long userId, BookingDtoIn bookingDtoIn) {
-        if (bookingDtoIn.getEnd().isBefore(bookingDtoIn.getStart())) {
-            throw new EndBeforeStartException();
+        if (bookingDtoIn.getEnd().isBefore(bookingDtoIn.getStart()) ||
+                bookingDtoIn.getEnd().equals(bookingDtoIn.getStart()) ||
+                bookingDtoIn.getStart() == null) {
+            throw new StartEndMismatchException(bookingDtoIn.getStart());
         }
         User booker = userService.getUser(userId);
         Item item = itemService.getItem(bookingDtoIn.getItemId());
@@ -71,6 +76,7 @@ class BookingServiceImpl implements BookingService {
         }
         Booking booking = newBooking(bookingDtoIn, booker, item);
         if (item.getAvailable()) {
+            log.info("Add booking by user with id-{}", userId);
             return bookingMapper.toDTO(bookingRepository.save(booking));
         } else {
             throw new ItemUnavailableException(item.getId());
@@ -92,6 +98,7 @@ class BookingServiceImpl implements BookingService {
         } else {
             throw new BookingUnavailableException("User with id -" + userId + " isn't owner of item with id - " + itemId);
         }
+        log.info("Booking with id-{} now has state state-{}", userId, booking.getStatus());
         return bookingMapper.toDTO(booking);
     }
 
@@ -111,55 +118,90 @@ class BookingServiceImpl implements BookingService {
                 .build();
     }
 
-    private List<BookingDto> getUserBookings(String state, List<Booking> allUserBookings) {
+    private List<BookingDto> getUserBookings(String state, Long userId, Integer offset, Integer limit) {
         LocalDateTime now = LocalDateTime.now();
-        List<BookingDto> result;
+        int page = 0;
+        if (((offset + 1) / limit) > 0 && ((offset + 1) % limit) == 0) {
+            page = ((offset + 1) / limit) - 1;
+        } else if (((offset + 1) / limit) > 0 && ((offset + 1) % limit) != 0) {
+            page = ((offset + 1) / limit);
+        }
         switch (state) {
             case "ALL":
-                result = allUserBookings.stream()
+                return bookingRepository.findAllByBookerId(userId, PageRequest.of(page, limit, Sort.by("id")
+                                .descending()))
                         .map(bookingMapper::toDTO)
-                        .collect(Collectors.toList());
-                result.sort(Comparator.comparing(BookingDto::getId).reversed());
-                return result;
+                        .getContent();
             case "CURRENT":
-                result = allUserBookings.stream()
-                        .filter(x -> x.getStart().isBefore(now) && x.getEnd().isAfter(now))
+                return bookingRepository.findAllByBookerIdAndStartIsBeforeAndEndIsAfter(userId, now, now,
+                                PageRequest.of(page, limit, Sort.by("id").ascending()))
                         .map(bookingMapper::toDTO)
-                        .collect(Collectors.toList());
-                result.sort(Comparator.comparing(BookingDto::getId).reversed());
-                return result;
+                        .getContent();
             case "PAST":
-                result = allUserBookings.stream()
-                        .filter(x -> x.getStart().isBefore(now) && x.getEnd().isBefore(now))
+                return bookingRepository.findAllByBookerIdAndStartIsBeforeAndEndIsBefore(userId, now, now,
+                                PageRequest.of(page, limit, Sort.by("id").descending()))
                         .map(bookingMapper::toDTO)
-                        .sorted(Comparator.comparing(BookingDto::getId).reversed())
-                        .collect(Collectors.toList());
-                result.sort(Comparator.comparing(BookingDto::getId).reversed());
-                return result;
+                        .getContent();
             case "FUTURE":
-                result = allUserBookings.stream()
-                        .filter(x -> x.getStart().isAfter(now) && x.getEnd().isAfter(now))
+                return bookingRepository.findAllByBookerIdAndStartIsAfterAndEndIsAfter(userId, now, now,
+                                PageRequest.of(page, limit, Sort.by("id").descending()))
                         .map(bookingMapper::toDTO)
-                        .sorted(Comparator.comparing(BookingDto::getId).reversed())
-                        .collect(Collectors.toList());
-                result.sort(Comparator.comparing(BookingDto::getId).reversed());
-                return result;
+                        .getContent();
             case "WAITING":
-                result = allUserBookings.stream()
-                        .filter(x -> x.getStatus().equals(Status.WAITING))
+                return bookingRepository.findAllByBookerIdAndStatus(userId, Status.WAITING,
+                                PageRequest.of(page, limit, Sort.by("id").descending()))
                         .map(bookingMapper::toDTO)
-                        .sorted(Comparator.comparing(BookingDto::getId).reversed())
-                        .collect(Collectors.toList());
-                result.sort(Comparator.comparing(BookingDto::getId).reversed());
-                return result;
+                        .getContent();
             case "REJECTED":
-                result = allUserBookings.stream()
-                        .filter(x -> x.getStatus().equals(Status.REJECTED))
+                return bookingRepository.findAllByBookerIdAndStatus(userId, Status.REJECTED,
+                                PageRequest.of(page, limit, Sort.by("id").descending()))
                         .map(bookingMapper::toDTO)
-                        .sorted(Comparator.comparing(BookingDto::getId).reversed())
-                        .collect(Collectors.toList());
-                result.sort(Comparator.comparing(BookingDto::getId).reversed());
-                return result;
+                        .getContent();
+            default:
+                throw new UnsupportedStatusException(state);
+        }
+    }
+
+    private List<BookingDto> getBookingsForOwner(String state, List<Item> ownerItems,
+                                                 Long userId, Integer offset, Integer limit) {
+        LocalDateTime now = LocalDateTime.now();
+        int page = 0;
+        if (((offset + 1) / limit) > 0 && ((offset + 1) % limit) == 0) {
+            page = ((offset + 1) / limit) - 1;
+        } else if (((offset + 1) / limit) > 0 && ((offset + 1) % limit) != 0) {
+            page = ((offset + 1) / limit);
+        }
+        switch (state) {
+            case "ALL":
+                return bookingRepository.findAllByBookerIdNotAndItemIn(userId, ownerItems,
+                                PageRequest.of(page, limit, Sort.by("id").descending()))
+                        .map(bookingMapper::toDTO)
+                        .getContent();
+            case "CURRENT":
+                return bookingRepository.findAllByBookerIdNotAndItemInAndStartIsBeforeAndEndIsAfter(userId, ownerItems,
+                                now, now, PageRequest.of(page, limit, Sort.by("id").descending()))
+                        .map(bookingMapper::toDTO)
+                        .getContent();
+            case "PAST":
+                return bookingRepository.findAllByBookerIdNotAndItemInAndStartIsBeforeAndEndIsBefore(userId, ownerItems,
+                                now, now, PageRequest.of(page, limit, Sort.by("id").descending()))
+                        .map(bookingMapper::toDTO)
+                        .getContent();
+            case "FUTURE":
+                return bookingRepository.findAllByBookerIdNotAndItemInAndStartIsAfterAndEndIsAfter(userId, ownerItems,
+                                now, now, PageRequest.of(page, limit, Sort.by("id").descending()))
+                        .map(bookingMapper::toDTO)
+                        .getContent();
+            case "WAITING":
+                return bookingRepository.findAllByBookerIdNotAndItemInAndStatus(userId, ownerItems, Status.WAITING,
+                                PageRequest.of(page, limit, Sort.by("id").descending()))
+                        .map(bookingMapper::toDTO)
+                        .getContent();
+            case "REJECTED":
+                return bookingRepository.findAllByBookerIdNotAndItemInAndStatus(userId, ownerItems, Status.REJECTED,
+                                PageRequest.of(page, limit, Sort.by("id").descending()))
+                        .map(bookingMapper::toDTO)
+                        .getContent();
             default:
                 throw new UnsupportedStatusException(state);
         }

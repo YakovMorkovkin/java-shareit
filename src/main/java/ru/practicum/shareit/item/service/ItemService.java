@@ -5,6 +5,8 @@ import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Item;
 
+import java.util.List;
+
 @Service
 public interface ItemService {
     ItemDto addItem(Long userId, ItemDto itemDto);
@@ -13,11 +15,13 @@ public interface ItemService {
 
     ItemDto getItemById(Long userId, Long itemId);
 
+    List<ItemDto> getAllItemsOfUserWithId(Long userId, Integer offset, Integer limit);
+
+    List<ItemDto> searchItem(String text, Integer offset, Integer limit);
+
     CommentDto addComment(Long itemId, Long userId, CommentDto commentDto);
 
     Item getItem(Long itemId);
-
-    Item composeItem(Item item, ItemDto itemDto);
 
     ItemDto connectBooking(ItemDto itemDto);
 

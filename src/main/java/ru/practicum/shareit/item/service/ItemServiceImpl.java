@@ -1,7 +1,10 @@
 package ru.practicum.shareit.item.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.dao.BookingRepository;
 import ru.practicum.shareit.booking.dto.BookingShortDto;
@@ -18,6 +21,7 @@ import ru.practicum.shareit.item.dto.mapper.CommentMapper;
 import ru.practicum.shareit.item.dto.mapper.ItemMapper;
 import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.request.dao.ItemRequestRepository;
 import ru.practicum.shareit.user.service.UserService;
 
 import java.time.LocalDateTime;
@@ -31,6 +35,7 @@ import static ru.practicum.shareit.booking.Status.REJECTED;
 @Service
 @RequiredArgsConstructor
 @Primary
+@Slf4j
 public class ItemServiceImpl implements ItemService {
     private final ItemRepository itemRepository;
     private final ItemMapper itemMapper;
@@ -39,12 +44,17 @@ public class ItemServiceImpl implements ItemService {
     private final BookingShortMapper bookingShortMapper;
     private final CommentRepository commentRepository;
     private final CommentMapper commentMapper;
+    private final ItemRequestRepository itemRequestRepository;
 
 
     @Override
     public ItemDto addItem(Long userId, ItemDto itemDto) {
         Item newItem = itemMapper.toModel(itemDto);
         newItem.setOwner(userService.getUser(userId));
+        if (itemDto.getRequestId() != null) {
+            newItem.setItemRequest(itemRequestRepository.findById(itemDto.getRequestId()).orElse(null));
+        }
+        log.info("Add item dy user with id-{}", userId);
         return itemMapper.toDTO(itemRepository.save(newItem));
     }
 
@@ -54,6 +64,7 @@ public class ItemServiceImpl implements ItemService {
         Item updateItem;
         if (itemToUpdate.getOwner().getId().equals(userId)) {
             updateItem = composeItem(itemToUpdate, itemDto);
+            log.info("Item with id-{} updated", itemId);
             itemRepository.update(updateItem.getOwner(), updateItem.getName(), updateItem.getDescription(),
                     updateItem.getAvailable(), updateItem.getId());
         } else {
@@ -68,14 +79,35 @@ public class ItemServiceImpl implements ItemService {
         if (item.getOwner().getId().equals(userId)) {
             return connectComment(connectBooking(itemMapper.toDTO(item)));
         }
+        log.info("Get item with id-{}", itemId);
         return connectComment(itemMapper.toDTO(item));
+    }
+
+    @Override
+    public List<ItemDto> getAllItemsOfUserWithId(Long userId, Integer offset, Integer limit) {
+        log.info("Get all items of user with id-{}", userId);
+        return itemRepository.findByOwnerId(userId, PageRequest.of(offset, limit, Sort.by("id").ascending()))
+                .map(itemMapper::toDTO)
+                .map(this::connectBooking)
+                .map(this::connectComment)
+                .getContent();
+    }
+
+    @Override
+    public List<ItemDto> searchItem(String text, Integer offset, Integer limit) {
+        if (text != null && !text.isEmpty()) {
+            return itemRepository.findByAvailableIsTrueAndDescriptionContainsIgnoreCaseOrNameContainsIgnoreCase(text,
+                            text,
+                            PageRequest.of(offset, limit, Sort.by("id").ascending()))
+                    .map(itemMapper::toDTO).getContent();
+        } else return new ArrayList<>();
     }
 
     @Override
     public CommentDto addComment(Long itemId, Long userId, CommentDto commentDto) {
         Comment comment;
         LocalDateTime now = LocalDateTime.now();
-        List<Booking> bookings = bookingRepository.findAllByItem_IdAndBooker_Id(itemId, userId);
+        List<Booking> bookings = bookingRepository.findAllByItemIdAndBookerId(itemId, userId);
         if (!bookings.isEmpty() && bookings.stream()
                 .anyMatch(x -> !x.getStatus().equals(REJECTED) && x.getStart().isBefore(now))) {
             comment = Comment.builder()
@@ -96,8 +128,7 @@ public class ItemServiceImpl implements ItemService {
         return itemRepository.findById(itemId).orElseThrow(() -> new ItemNotFoundException(itemId));
     }
 
-    @Override
-    public Item composeItem(Item item, ItemDto itemDto) {
+    private Item composeItem(Item item, ItemDto itemDto) {
         return Item.builder()
                 .id(item.getId())
                 .name(itemDto.getName() != null ?
@@ -124,22 +155,22 @@ public class ItemServiceImpl implements ItemService {
     }
 
     private List<BookingShortDto> getLastAndNextItemBookings(ItemDto itemDto) {
-        List<BookingShortDto> lastAndNextBokings = new ArrayList<>();
-        lastAndNextBokings.add(0, null);
-        lastAndNextBokings.add(1, null);
+        List<BookingShortDto> lastAndNextBookings = new ArrayList<>();
+        lastAndNextBookings.add(0, null);
+        lastAndNextBookings.add(1, null);
         LocalDateTime now = LocalDateTime.now();
-        List<Booking> itemBookings = bookingRepository.findAllByItem_Id(itemDto.getId());
-        lastAndNextBokings.add(0, bookingShortMapper.toDTO(itemBookings.stream()
+        List<Booking> itemBookings = bookingRepository.findAllByItemId(itemDto.getId());
+        lastAndNextBookings.add(0, bookingShortMapper.toDTO(itemBookings.stream()
                 .filter(x -> !x.getStatus().equals(REJECTED))
-                .filter(x -> x.getEnd().isBefore(now))
-                .sorted(Comparator.comparing(Booking::getStart))
+                .filter(x -> x.getEnd().isBefore(now) || (x.getStart().isBefore(now) && x.getEnd().isAfter(now)))
+                .sorted(Comparator.comparing(Booking::getStart).reversed())
                 .findFirst().orElse(null)));
-        lastAndNextBokings.add(1, bookingShortMapper.toDTO(itemBookings.stream()
+        lastAndNextBookings.add(1, bookingShortMapper.toDTO(itemBookings.stream()
                 .filter(x -> !x.getStatus().equals(REJECTED))
                 .filter(x -> x.getStart().isAfter(now))
                 .sorted(Comparator.comparing(Booking::getStart))
                 .findFirst().orElse(null)));
-        return lastAndNextBokings;
+        return lastAndNextBookings;
     }
 
     private List<CommentDto> getItemComments(ItemDto itemDto) {

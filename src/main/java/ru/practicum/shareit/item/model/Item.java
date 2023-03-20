@@ -18,16 +18,12 @@ public class Item implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    //@NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id")
     private User owner;
-    //@NotEmpty
     @Column(name = "item_name")
     private String name;
-    //@NotEmpty
     private String description;
-    //@NotNull
     @Column(name = "available")
     private Boolean available;
     @OneToOne(fetch = FetchType.LAZY)

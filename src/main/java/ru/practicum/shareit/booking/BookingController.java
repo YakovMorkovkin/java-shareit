@@ -7,6 +7,8 @@ import ru.practicum.shareit.booking.dto.BookingDtoIn;
 import ru.practicum.shareit.booking.service.BookingService;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
 import java.util.List;
 
@@ -26,14 +28,22 @@ public class BookingController {
 
     @GetMapping()
     public List<BookingDto> getAllBookingsOfUser(@NotEmpty @RequestHeader(ID) Long userId,
-                                                 @RequestParam(defaultValue = "ALL", required = false) String state) {
-        return bookingService.getAllBookingsOfUser(userId, state);
+                                                 @RequestParam(defaultValue = "ALL", required = false) String state,
+                                                 @RequestParam(value = "from", defaultValue = "0",
+                                                         required = false) @Min(0) Integer offset,
+                                                 @RequestParam(value = "size", defaultValue = "10",
+                                                         required = false) @Min(1) @Max(50) Integer limit) {
+        return bookingService.getAllBookingsOfUser(state, userId, offset, limit);
     }
 
     @GetMapping("/owner")
     public List<BookingDto> getAllItemsBookingsOfOwner(@NotEmpty @RequestHeader(ID) Long userId,
-                                                       @RequestParam(defaultValue = "ALL", required = false) String state) {
-        return bookingService.getAllItemsBookingsOfOwner(userId, state);
+                                                       @RequestParam(defaultValue = "ALL", required = false) String state,
+                                                       @RequestParam(value = "from", defaultValue = "0",
+                                                               required = false) @Min(0) Integer offset,
+                                                       @RequestParam(value = "size", defaultValue = "10",
+                                                               required = false) @Min(1) @Max(50) Integer limit) {
+        return bookingService.getAllItemsBookingsOfOwner(userId, state, offset, limit);
     }
 
     @PostMapping

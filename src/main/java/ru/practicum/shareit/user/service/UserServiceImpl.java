@@ -1,6 +1,7 @@
 package ru.practicum.shareit.user.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exception.EmailDuplicateException;
@@ -13,6 +14,7 @@ import ru.practicum.shareit.user.model.User;
 @Service
 @RequiredArgsConstructor
 @Primary
+@Slf4j
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
@@ -20,7 +22,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto addUser(UserDto userDto) {
-            return userMapper.toDTO(userRepository.save(userMapper.toModel(userDto)));
+        log.info("Add user");
+        return userMapper.toDTO(userRepository.save(userMapper.toModel(userDto)));
     }
 
     @Override
@@ -31,6 +34,7 @@ public class UserServiceImpl implements UserService {
                 !userRepository.findByEmail(userDto.getEmail()).isPresent())) {
             updateUser = composeUser(userToUpdate, userDto);
             userRepository.update(updateUser.getName(), updateUser.getEmail(), updateUser.getId());
+            log.info("Data for user with id-{} updated", userId);
         } else if (userRepository.findByEmail(userDto.getEmail()).isPresent()) {
             throw new EmailDuplicateException(userDto.getEmail());
         }
@@ -39,11 +43,11 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getUser(Long userId) {
+        log.info("Getting user with id-{}", userId);
         return userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
     }
 
-    @Override
-    public User composeUser(User user, UserDto userDto) {
+    private User composeUser(User user, UserDto userDto) {
         return User.builder()
                 .id(user.getId())
                 .name(userDto.getName() != null ? userDto.getName() : user.getName())
